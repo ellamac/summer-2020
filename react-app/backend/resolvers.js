@@ -39,7 +39,9 @@ module.exports = {
   },
   Mutation: {
     addHost: async (root, { name, phone, email }) => {
-      let host = new Host({ name, phone, email });
+      let host = new Host({ name });
+      if (phone) host.phone = phone;
+      if (email) host.email = email;
       try {
         await host.save();
       } catch (error) {
@@ -50,7 +52,9 @@ module.exports = {
       return host;
     },
     addPlace: async (root, { name, address, info, image }) => {
-      let place = new Place({ name, address, info, image });
+      let place = new Place({ name, address });
+      if (info) place.info = info;
+      if (image) place.image = image;
       try {
         await place.save();
       } catch (error) {
@@ -63,13 +67,17 @@ module.exports = {
     addOrchestra: async (root, { name, accommodation, host }) => {
       let orchestra = new Orchestra({ name });
       try {
-        const place = await Place.findOne({ name: accommodation });
-        if (place) {
-          orchestra.accommodation = place;
+        if (accommodation) {
+          const place = await Place.findOne({ name: accommodation });
+          if (place) {
+            orchestra.accommodation = place;
+          }
         }
-        const hostFound = await Host.findOne({ name: host });
         if (host) {
-          orchestra.host = hostFound;
+          const hostFound = await Host.findOne({ name: host });
+          if (host) {
+            orchestra.host = hostFound;
+          }
         }
         await orchestra.save();
       } catch (error) {
@@ -83,22 +91,27 @@ module.exports = {
       root,
       { name, starts, ends, description, place, participants }
     ) => {
-      let event = new Event({ name, starts, ends, description });
+      let event = new Event({ name, starts, description });
+      if (ends) event.ends = ends;
       try {
-        const places = await Place.find({ name: { $in: place } });
-        if (places) {
-          event.place = places;
+        if (place) {
+          const places = await Place.find({ name: { $in: place } });
+          if (places) {
+            event.place = places;
+          }
         }
-        const participantsFound = await Orchestra.find({
-          name: { $in: participants },
-        });
-        if (participantsFound) {
-          event.participants = participantsFound;
+        if (participants) {
+          const participantsFound = await Orchestra.find({
+            name: { $in: participants },
+          });
+          if (participantsFound) {
+            event.participants = participantsFound;
+          }
         }
         await event.save();
       } catch (error) {
         throw new UserInputError(error.message, {
-          invalidArgs: { name, accommodation, host },
+          invalidArgs: { name, starts, ends, description, place, participants },
         });
       }
       return event;
